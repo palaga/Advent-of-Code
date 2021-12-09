@@ -78,18 +78,20 @@
              (setf (cdr (assoc string table)) n))
            (car-filter-table (p)
              (car (filter-table p))))
-    (let* ((diff-8-7 (string-difference
-                      (digit-to-segments 8)
-                      (digit-to-segments 7)))
-           (six-segments (car-filter-table
+    (let* ((six-segments (car-filter-table
                           (lambda (pair)
                             (and
-                             (string-subset-p diff-8-7 (car pair))
+                             (string-subset-p (string-difference
+                                               (digit-to-segments 8)
+                                               (digit-to-segments 7))
+                                              (car pair))
                              (not (cdr pair))))))
            (five-segments (car-filter-table
                            (lambda (pair)
                              (and (eq (length (car pair)) 5)
-                                  (eq (length (string-difference six-segments (car pair))) 1)))))
+                                  (eq (length (string-difference six-segments
+                                                                 (car pair)))
+                                      1)))))
            (nine-segments (car-filter-table
                            (lambda (pair)
                              (string-equal-set
@@ -105,7 +107,9 @@
                                     (not (eq signal nine-segments)))))))
            (three-segments (car-filter-table
                             (lambda (pair)
-                              (eq (length (string-difference (car pair) (digit-to-segments 1))) 3))))
+                              (eq (length (string-difference (car pair)
+                                                             (digit-to-segments 1)))
+                                  3))))
            (two-segments (car-filter-table
                           (lambda (pair)
                             (let ((signal (car pair)))
@@ -120,7 +124,24 @@
       (set-segment two-segments 2)
       table)))
 
-(pprint (decode-non-unique
-  (decode-unique (caar *input*))))
-(string-subset-p "abc" "bcadef%")
-(string-equal-set "cdef" "cedf")
+(defun digits-to-number (digits)
+  (parse-integer
+   (format nil "~{~a~}" (mapcar #'write-to-string digits))))
+
+(defun calculate-output-digits (entry)
+  (let ((decoded-signals (decode-non-unique
+                          (decode-unique (car entry))))
+        (outputs (cadr entry)))
+    (mapcar
+     (lambda (item)
+       (loop for pair in decoded-signals
+          when (string-equal-set (car pair) item)
+          return (cdr pair)))
+     outputs)))
+
+;;; Answer
+(apply #'+
+       (mapcar
+        (lambda (entry)
+          (digits-to-number (calculate-output-digits entry)))
+        *input*))
