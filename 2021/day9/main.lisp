@@ -42,8 +42,6 @@
           (apply #'min (get-adjacent-locations map row col))))
     (< point adjacent-minimum)))
 
-
-
 (defun get-low-points (map)
   (destructuring-bind (height width)
       (array-dimensions map)
@@ -80,10 +78,9 @@
 (defun get-basins (depth-map)
   (destructuring-bind (height width)
       (array-dimensions depth-map)
-    (let ((depth-map-shadow (make-array (list height width))))
+    (let ((depth-map-shadow (make-array (list height width) :initial-element nil)))
       (flet ((get-state (row col) (aref depth-map-shadow row col)))
         (loop
-          with counter = 0
           for row below height
           nconc
           (loop
@@ -93,7 +90,11 @@
               collect (flood-fill depth-map
                                   depth-map-shadow
                                   row col)))))))
-(apply #'* (subseq (sort
-          (remove-if #'zerop
-                     (get-basins *depth-map*))
-          #'>) 0 3))
+
+(apply
+ #'*
+ (subseq
+  (sort
+   (remove-if #'zerop (get-basins *depth-map*))
+   #'>)
+  0 3))
