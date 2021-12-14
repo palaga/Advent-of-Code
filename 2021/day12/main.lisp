@@ -22,10 +22,20 @@
 (defun find-transitions (edges vertex)
   (loop for edge in edges
         for left = (car edge)
-        for right = (cdr edge)
+        for right = (cadr edge)
         when (eq left vertex)
           collect right into transitions
         when (eq right vertex)
           collect left into transitions
         finally (return transitions)))
+
+(defun find-paths (edges point &key current-path skip-list)
+  (let ((new-path (cons point current-path)))
+    (cond
+      ((or (member point current-path)
+           (member point skip-list))
+       nil)
+      ((eq point 'end) (reverse new-path))
+      (t nil))))
+
 (find-transitions *input* 'start)
