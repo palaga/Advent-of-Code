@@ -15,9 +15,9 @@
           (uiop:split-string line :separator "-")))
        (uiop:read-file-lines "input.txt")))
 
-(defun small-cave-p (cave)
+(defun small-cave-p (vertex)
   (every #'lower-case-p
-         (string cave)))
+         (string vertex)))
 
 (defun find-transitions (edges vertex)
   (loop for edge in edges
@@ -29,13 +29,24 @@
           collect left into transitions
         finally (return transitions)))
 
-(defun find-paths (edges point &key current-path skip-list)
-  (let ((new-path (cons point current-path)))
+(defun find-paths (edges vertex &optional path)
+  (let ((new-path (cons vertex path)))
     (cond
-      ((or (member point current-path)
-           (member point skip-list))
+      ((eq vertex 'start) (list new-path))
+      ((and (small-cave-p vertex)
+            (member vertex path))
        nil)
-      ((eq point 'end) (reverse new-path))
-      (t nil))))
+      (t (apply
+          #'nconc
+          (mapcar
+           (lambda (v)
+             (find-paths edges v new-path))
+           (find-transitions edges vertex)))))))
 
-(find-transitions *input* 'start)
+(setq *paths* (find-paths *input* 'end))
+
+(defun find-small-caves (path)
+  (remove-if-not #'small-cave-p path))
+
+(length *paths*)
+
