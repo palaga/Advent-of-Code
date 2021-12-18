@@ -29,24 +29,32 @@
           collect left into transitions
         finally (return transitions)))
 
-(defun find-paths (edges vertex &optional path)
-  (let ((new-path (cons vertex path)))
-    (cond
-      ((eq vertex 'start) (list new-path))
-      ((and (small-cave-p vertex)
-            (member vertex path))
-       nil)
-      (t (apply
-          #'nconc
-          (mapcar
-           (lambda (v)
-             (find-paths edges v new-path))
-           (find-transitions edges vertex)))))))
+(defun find-paths (edges)
+  (flet ((visited-small-cave-p (vertex stack)
+           (and (small-cave-p vertex)
+                (member vertex stack
+                        :key #'car)))
+         (cleanup-stack (stack)
+           (member-if-not #'null stack :key #'cdr)))
+    (loop
+      for stack = `((end . ,(find-transitions edges 'end)))
+        then (cleanup-stack stack)
+      while stack
+      for vertex = (caar stack)
+      if (eq vertex 'start)
+        collect (mapcar #'car stack) into paths
+        and do (pop stack)
+      else
+        do (let ((new-vertex (pop (cdar stack))))
+             (unless (or (eq new-vertex 'end)
+                      (visited-small-cave-p new-vertex stack))
+                 (push
+                  `(,new-vertex . ,(find-transitions edges new-vertex))
+                  stack)))
+      finally (return paths))))
 
-(setq *paths* (find-paths *input* 'end))
-
-(defun find-small-caves (path)
-  (remove-if-not #'small-cave-p path))
+(setq *paths* (find-paths *input*))
 
 (length *paths*)
 
+;;; Part 2
