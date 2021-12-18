@@ -29,12 +29,8 @@
           collect left into transitions
         finally (return transitions)))
 
-(defun find-paths (edges)
-  (flet ((visited-small-cave-p (vertex stack)
-           (and (small-cave-p vertex)
-                (member vertex stack
-                        :key #'car)))
-         (cleanup-stack (stack)
+(defun find-paths (edges skip-when)
+  (flet ((cleanup-stack (stack)
            (member-if-not #'null stack :key #'cdr)))
     (loop
       for stack = `((end . ,(find-transitions edges 'end)))
@@ -47,14 +43,39 @@
       else
         do (let ((new-vertex (pop (cdar stack))))
              (unless (or (eq new-vertex 'end)
-                      (visited-small-cave-p new-vertex stack))
+                         (funcall skip-when new-vertex stack))
                  (push
                   `(,new-vertex . ,(find-transitions edges new-vertex))
                   stack)))
       finally (return paths))))
 
-(setq *paths* (find-paths *input*))
+(defun visited-small-cave-p (vertex stack)
+  (and (small-cave-p vertex)
+       (member vertex stack
+               :key #'car)))
 
-(length *paths*)
+(length
+ (find-paths
+  *input*
+  #'visited-small-cave-p))
 
 ;;; Part 2
+(defun find-small-caves (path)
+  (remove-if-not #'small-cave-p path))
+
+(defun visited-any-small-cave-twice-p
+    (vertex stack)
+  (and
+   (visited-small-cave-p vertex stack)
+   (let ((small-caves (find-small-caves
+                       (mapcar #'car stack))))
+     (not
+      (eq
+       (length small-caves)
+       (length
+        (remove-duplicates small-caves)))))))
+
+(length
+ (find-paths
+  *input*
+  #'visited-any-small-cave-twice-p))
